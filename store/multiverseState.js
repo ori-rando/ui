@@ -20,6 +20,7 @@ const ensureMultiverseExists = (state, multiverseId) => {
       bingoUniverses: [],
       markedBingoGoals: [],
       seed: null,
+      locked: false,
     })
   }
 }
@@ -43,6 +44,10 @@ export const mutations = {
     ensureMultiverseExists(state, multiverseId)
     state.multiverses[multiverseId].bingoUniverses = bingoUniverses
   },
+  setMultiverseLocked(state, { multiverseId, locked }) {
+    ensureMultiverseExists(state, multiverseId)
+    state.multiverses[multiverseId].locked = locked
+  },
   setSeed(state, { multiverseId, seed }) {
     state.multiverses[multiverseId].seed = seed
   },
@@ -63,6 +68,7 @@ export const actions = {
     const multiverse = await this.$axios.$get(`/multiverses/${multiverseId}`)
     commit('setUniverses', { multiverseId, universes: multiverse.universes })
     commit('setSpectators', { multiverseId, spectators: multiverse.spectators })
+    commit('setMultiverseLocked', { multiverseId, locked: multiverse.locked })
 
     if (multiverse.seedId !== null) {
       await dispatch('fetchSeed', { multiverseId, seedId: multiverse.seedId })
@@ -146,6 +152,7 @@ export const actions = {
           case 'RandoProto.MultiverseInfoMessage':
             commit('setUniverses', { multiverseId, universes: packet.universes })
             commit('setSpectators', { multiverseId, spectators: packet.spectators })
+            commit('setMultiverseLocked', { multiverseId, locked: packet.locked })
             break
           case 'RandoProto.SyncBingoUniversesMessage':
             commit('setBingoUniverses', { multiverseId, bingoUniverses: packet.bingoUniverses })

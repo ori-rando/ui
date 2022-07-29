@@ -2,12 +2,21 @@
   <div>
     <v-container>
       <div class='d-flex justify-center align-center mt-12 mb-6'>
-        <h1 class='text-center ml-8'>
+        <v-tooltip top open-delay='500'>
+          <template #activator='{on}'>
+            <v-btn class='ml-2' :disabled='!canLock || lockGameLoading' icon v-on='on' @click='toggleGameLock'>
+              <v-icon :class='isLocked ? "lock-animation" : "unlock-animation"'>{{ isLocked ? 'mdi-lock' : 'mdi-lock-open-outline' }}</v-icon>
+            </v-btn>
+          </template>
+          <span v-if='canLock'>{{ isLocked ? 'Unlock' : 'Lock' }} this game</span>
+          <span v-else>This game is {{ isLocked ? 'locked' : 'unlocked' }}</span>
+        </v-tooltip>
+        <h1 class='text-center mx-4'>
           Game <small>#</small>{{ multiverseId }}
         </h1>
         <v-tooltip top open-delay='500'>
-          <template #activator='{on}' :disabled='!gameLinkCopied'>
-            <v-btn class='ml-2' v-on='on' icon :disabled='gameLinkCopied' @click='copyGameLink'>
+          <template #activator='{on}'>
+            <v-btn v-on='on' icon :disabled='gameLinkCopied' @click='copyGameLink'>
               <v-icon>{{ gameLinkCopied ? 'mdi-clipboard-check-outline' : 'mdi-link' }}</v-icon>
             </v-btn>
           </template>
@@ -248,6 +257,7 @@
       seedgenResultVisible: false,
       hideSeedgenResultCompletely: false,
       bingoOverlayEnabled: false,
+      lockGameLoading: false,
     }),
     computed: {
       ...mapGetters('user', ['isLoggedIn']),
@@ -316,6 +326,15 @@
       },
       isBingoBoardOverlay() {
         return this.$route.query.isBingoBoardOverlay === 'true'
+      },
+      isPlayer() {
+        return this.multiverse?.universes.some(u => u.worlds.some(w => w.members.some(m => m.id === this.user.id))) ?? false
+      },
+      canLock() {
+        return this.isPlayer
+      },
+      isLocked() {
+        return this.multiverse?.locked
       }
     },
     watch: {
@@ -491,6 +510,21 @@
           }, 500)
         }
       },
+      async toggleGameLock() {
+        if (this.lockGameLoading) {
+          return
+        }
+
+        this.lockGameLoading = true
+
+        try {
+          await this.$axios.post(`/multiverses/${this.multiverseId}/toggle-lock`)
+        } catch (e) {
+          console.error(e)
+        }
+
+        this.lockGameLoading = false
+      },
     },
   }
 </script>
@@ -542,5 +576,41 @@
       top: 1em;
       z-index: 10;
     }
+  }
+
+  @keyframes lock-animation {
+    0% {
+      transform: translateY(0);
+    }
+
+    25% {
+      transform: translateY(5px);
+    }
+
+    100% {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes unlock-animation {
+    0% {
+      transform: translateY(0);
+    }
+
+    25% {
+      transform: translateY(-5px);
+    }
+
+    100% {
+      transform: translateY(0);
+    }
+  }
+
+  .lock-animation {
+    animation: lock-animation 0.25s forwards ease-out;
+  }
+
+  .unlock-animation {
+    animation: unlock-animation 0.25s forwards ease-out;
   }
 </style>

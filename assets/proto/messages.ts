@@ -51,6 +51,7 @@ export interface MultiverseInfoMessage {
   hasBingoBoard: boolean
   spectators: UserInfo[]
   seedId?: number | undefined
+  locked: boolean
 }
 
 export interface BingoSquare {
@@ -578,7 +579,7 @@ export const UniverseInfo = {
 messageTypeRegistry.set(UniverseInfo.$type, UniverseInfo)
 
 function createBaseMultiverseInfoMessage(): MultiverseInfoMessage {
-  return { $type: 'RandoProto.MultiverseInfoMessage', id: 0, universes: [], hasBingoBoard: false, spectators: [], seedId: undefined }
+  return { $type: 'RandoProto.MultiverseInfoMessage', id: 0, universes: [], hasBingoBoard: false, spectators: [], seedId: undefined, locked: false }
 }
 
 export const MultiverseInfoMessage = {
@@ -599,6 +600,9 @@ export const MultiverseInfoMessage = {
     }
     if (message.seedId !== undefined) {
       writer.uint32(40).int64(message.seedId)
+    }
+    if (message.locked === true) {
+      writer.uint32(72).bool(message.locked)
     }
     return writer
   },
@@ -625,6 +629,9 @@ export const MultiverseInfoMessage = {
         case 5:
           message.seedId = longToNumber(reader.int64() as Long)
           break
+        case 9:
+          message.locked = reader.bool()
+          break
         default:
           reader.skipType(tag & 7)
           break
@@ -641,6 +648,7 @@ export const MultiverseInfoMessage = {
       hasBingoBoard: isSet(object.hasBingoBoard) ? Boolean(object.hasBingoBoard) : false,
       spectators: Array.isArray(object?.spectators) ? object.spectators.map((e: any) => UserInfo.fromJSON(e)) : [],
       seedId: isSet(object.seedId) ? Number(object.seedId) : undefined,
+      locked: isSet(object.locked) ? Boolean(object.locked) : false,
     }
   },
 
@@ -659,6 +667,7 @@ export const MultiverseInfoMessage = {
       obj.spectators = []
     }
     message.seedId !== undefined && (obj.seedId = Math.round(message.seedId))
+    message.locked !== undefined && (obj.locked = message.locked)
     return obj
   },
 
@@ -669,6 +678,7 @@ export const MultiverseInfoMessage = {
     message.hasBingoBoard = object.hasBingoBoard ?? false
     message.spectators = object.spectators?.map((e) => UserInfo.fromPartial(e)) || []
     message.seedId = object.seedId ?? undefined
+    message.locked = object.locked ?? false
     return message
   },
 }
